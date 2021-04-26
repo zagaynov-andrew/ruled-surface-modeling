@@ -479,10 +479,9 @@ const Data = {
 		pt.z = this.Z * Math.sin(pt.x) * Math.sin(pt.y);
 	},
 	c1_t: function (t, pt) {
-		//���������� ����������� dc1/dt
 		pt.x = this.Xmax - this.Xmin;
 		pt.y = 0;
-		pt.z = 0;
+		pt.z = this.Z * (this.Xmax - this.Xmin) * Math.cos(this.Xmin - this.Xmid) * Math.cos(this.Xmax * t - this.Xmin * t + this.Xmin - this.Xmid);
 	},
 	c2: function (t, pt) {
 		pt.x = this.Xmin + t * (this.Xmax - this.Xmin) - this.Xmid;
@@ -490,10 +489,9 @@ const Data = {
 		pt.z = this.Z * Math.sin(pt.x) * Math.sin(pt.y);
 	},
 	c2_t: function (t, pt) {
-		//���������� ����������� dc2/dt
-		//pt.x = ;
-		//pt.y = ;
-		//pt.z = ;
+		pt.x = this.Xmax - this.Xmin;
+		pt.y = 0;
+		pt.z = this.Z * (this.Xmax - this.Xmin) * Math.cos(this.Xmid - this.Xmax) * Math.cos(this.Xmax * t - this.Xmin * t + this.Xmin - this.Xmid);
 	},
 	generateBoundaryCurves: function (n, Xmin, Xmax, Ymin, Ymax, Z) {
 
@@ -892,6 +890,9 @@ const Data = {
 	calculateRuledSurface: function(){
 
 		let i, j;
+		let t, tau;
+		let pt, pt1, pt2;
+		let pt1_t, pt2_t;
 
 		const N = this.N.value;
 		const M = this.M.value;
@@ -905,48 +906,61 @@ const Data = {
 				this.normalsSurface[i][j] = new Array(3);
 		}
 
-		const pt1 = new Point();
-		const pt2 = new Point();
+		// let pt1 = new Point();
+		// let pt2 = new Point();
 
-		const pt1_t = new Point();
-		const pt2_t = new Point();
+		pt1_t = new Point();
+		pt2_t = new Point();
 
-		//// �������� ��� ������� ����� ���������� �����������
-		//for (i = 0; i < N; i++) {
-		//    for (j = 0; j < M; j++) {
-		//        this.c1(t, pt1);
-		//        this.c2(t, pt2);
+		t = 0;
+		for (i = 0; i < N; i++)
+		{
+			tau = 0;
+			for (j = 0; j < M; j++)
+			{
+				pt1 = new Point();
+				this.c1(t, pt1);
+				this.pointsSurface[i][j] = pt1;
+				pt2 = new Point();
+				this.c2(t, pt2);
+				this.pointsSurface[i][j] = pt2;
+				const x = pt1.x + (pt2.x - pt1.x) * tau;
+				const y = pt1.y + (pt2.y - pt1.y) * tau;
+				const z = pt1.z + (pt2.z - pt1.z) * tau;
+				pt = new Point(x, y, z);
+				this.pointsSurface[i][j] = pt;
 
-		//        const x = ;
-		//        const y = ;
-		//        const z = ;
-
-		//        pt = new Point(x, y, z);
-		//        this.pointsSurface[i][j] = pt;
-
-		//        //calculate tangent vectors
-		//        this.c1_t(t, pt1_t);
-		//        this.c2_t(t, pt2_t);
+				//calculate tangent vectors
+				pt1_t = new Point();
+				pt2_t = new Point();
+				this.c1_t(t, pt1_t);
+				this.c2_t(t, pt2_t);
 		
-		//        const x_t = ;
-		//        const y_t = ;
-		//        const z_t = ;
+				const x_t = t * (pt1_t.x + pt2_t.x);
+				const y_t = t * (pt1_t.y + pt2_t.y);
+				const z_t = t * (pt1_t.z + pt2_t.z);
+						
+				const x_tau = (pt2.x - pt1.x);
+				const y_tau = (pt2.y - pt1.y);
+				const z_tau = (pt2.z - pt1.z);
+						
+				const pt_t = vec3.fromValues(x_t, y_t, z_t);
+				const pt_tau = vec3.fromValues(x_tau, y_tau, z_tau);
 					
-		//        const x_tau = ;
-		//        const y_tau = ;
-		//        const z_tau = ;
+				//CALCULATE NORMAL VECTOR
+				let normal = vec3.create();
+				normal = vec3.cross(normal, pt_t, pt_tau);
 					
-		//        const pt_t = vec3.fromValues(x_t, y_t, z_t);
-		//        const pt_tau = vec3.fromValues(x_tau, y_tau, z_tau);
-					
-		//        //CALCULATE NORMAL VECTOR
-		//        const normal = vec3.create();
-					
-		//        this.normalsSpline[i][j][0] = normal[0];
-		//        this.normalsSpline[i][j][1] = normal[1];
-		//        this.normalsSpline[i][j][2] = normal[2];
-		//    }
-		//}
+				this.normalsSurface[i][j][0] = normal[0];
+				this.normalsSurface[i][j][1] = normal[1];
+				this.normalsSurface[i][j][2] = normal[2];
+				// this.normalsSurface[i][j][0] = 0;
+				// this.normalsSurface[i][j][1] = 0;
+				// this.normalsSurface[i][j][2] = 0;
+				tau += 1 / (M - 1);
+			}
+			t += 1 / (N - 1);
+		}
 
 		this.verticesSurface = new Float32Array(N * M * 6);
 		for (i = 0; i < N; i++)

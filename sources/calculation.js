@@ -481,7 +481,8 @@ const Data = {
 	c1_t: function (t, pt) {
 		pt.x = this.Xmax - this.Xmin;
 		pt.y = 0;
-		pt.z = this.Z * (this.Xmax - this.Xmin) * Math.cos(this.Xmin - this.Xmid) * Math.cos(this.Xmax * t - this.Xmin * t + this.Xmin - this.Xmid);
+		pt.z = this.Z * (this.Xmax - this.Xmin) * Math.sin(this.Ymin - this.Ymid) * 
+						Math.cos(this.Xmax * t - this.Xmin * t + this.Xmin - this.Xmid);
 	},
 	c2: function (t, pt) {
 		pt.x = this.Xmin + t * (this.Xmax - this.Xmin) - this.Xmid;
@@ -491,7 +492,8 @@ const Data = {
 	c2_t: function (t, pt) {
 		pt.x = this.Xmax - this.Xmin;
 		pt.y = 0;
-		pt.z = this.Z * (this.Xmax - this.Xmin) * Math.cos(this.Xmid - this.Xmax) * Math.cos(this.Xmax * t - this.Xmin * t + this.Xmin - this.Xmid);
+		pt.z = this.Z * (this.Xmax - this.Xmin) * Math.sin(this.Ymid - this.Ymax) *
+						Math.cos(this.Xmax * t - this.Xmin * t + this.Xmin - this.Xmid);
 	},
 	generateBoundaryCurves: function (n, Xmin, Xmax, Ymin, Ymax, Z) {
 
@@ -936,9 +938,13 @@ const Data = {
 				this.c1_t(t, pt1_t);
 				this.c2_t(t, pt2_t);
 		
-				const x_t = t * (pt1_t.x + pt2_t.x);
-				const y_t = t * (pt1_t.y + pt2_t.y);
-				const z_t = t * (pt1_t.z + pt2_t.z);
+				const x_t = (1 - tau) * pt1_t.x + tau * pt2_t.x;
+				const y_t = (1 - tau) * pt1_t.y + tau * pt2_t.y;
+				const z_t = (1 - tau) * pt1_t.z + tau * pt2_t.z;
+
+				// const x_t = pt1_t.x + tau * (pt2_t.x - pt1_t.x);
+				// const y_t = pt1_t.y + tau * (pt2_t.y - pt1_t.y);
+				// const z_t = pt1_t.z + tau * (pt2_t.z - pt1_t.z);
 						
 				const x_tau = (pt2.x - pt1.x);
 				const y_tau = (pt2.y - pt1.y);
@@ -954,9 +960,6 @@ const Data = {
 				this.normalsSurface[i][j][0] = normal[0];
 				this.normalsSurface[i][j][1] = normal[1];
 				this.normalsSurface[i][j][2] = normal[2];
-				// this.normalsSurface[i][j][0] = 0;
-				// this.normalsSurface[i][j][1] = 0;
-				// this.normalsSurface[i][j][2] = 0;
 				tau += 1 / (M - 1);
 			}
 			t += 1 / (N - 1);
